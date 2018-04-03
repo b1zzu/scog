@@ -18,3 +18,8 @@ branch = "mypc"
   dir = /etc
   user = root
 ```
+
+## How should it work
+
+The files are copied in `/tmp/sync` where is located the git repository, and after copied all files are added,
+committed, and pushed to the remote.
