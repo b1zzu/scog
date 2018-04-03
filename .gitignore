@@ -1,5 +1,7 @@
 
+# default
 /target
 **/*.rs.bk
+
+# config file
 config.toml
-main
