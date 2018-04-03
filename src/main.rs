@@ -1,4 +1,5 @@
 use std::env;
+use std::path::Path;
 use std::process::exit;
 
 fn main() {
@@ -20,7 +21,10 @@ fn main() {
         i = i + 1;
     }
 
-    println!("config: {}", config);
+    let config: &Path = Path::new(&config);
+    if !config.is_file() {
+        println!("sync: error: config file '{}' does not exists", config.to_string_lossy())
+    }
 }
 
 fn help() {
