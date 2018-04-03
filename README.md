@@ -1,2 +1,4 @@
 # sync
-Sync config file throw multiple pc
+
+Sync config files through multiple pc
+
