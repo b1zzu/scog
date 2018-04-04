@@ -4,6 +4,23 @@ use std::process::exit;
 use std::fs::File;
 use std::io::prelude::*;
 
+extern crate toml;
+
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+
+#[derive(Deserialize, Debug)]
+struct Config {
+    main: Main,
+}
+
+#[derive(Deserialize, Debug)]
+struct Main {
+    repository: String,
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -33,7 +50,9 @@ fn main() {
     config.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
 
-    println!("contents:\n{}", contents);
+    let config: Config = toml::from_str(contents.as_str()).unwrap();
+
+    println!("Config:\n{:?}", config);
 }
 
 fn help() {
