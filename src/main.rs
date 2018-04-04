@@ -1,6 +1,8 @@
 use std::env;
 use std::path::Path;
 use std::process::exit;
+use std::fs::File;
+use std::io::prelude::*;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -25,6 +27,13 @@ fn main() {
     if !config.is_file() {
         println!("sync: error: config file '{}' does not exists", config.to_string_lossy())
     }
+
+    let mut config: File = File::open(config).expect("file not found");
+    let mut contents: String = String::new();
+    config.read_to_string(&mut contents)
+        .expect("something went wrong reading the file");
+
+    println!("contents:\n{}", contents);
 }
 
 fn help() {
