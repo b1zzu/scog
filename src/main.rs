@@ -30,12 +30,17 @@ fn main() {
     // first ( 0 ) arguments is the name of the program
     let mut i: usize = 1;
     while i < args.len() {
-        if args[i] == String::from("--help") {
-            help();
-        } else if args[i] == String::from("--config") {
-            if (i + 1) < args.len() {
-                i = i + 1;
-                config = args[i].clone();
+        match args[i].as_str() {
+            "--help" => help(),
+            "--config" => {
+                if (i + 1) < args.len() {
+                    i = i + 1;
+                    config = args[i].clone();
+                }
+            }
+            &_ => {
+                println!("sync: error: options: '{}' is not valid", args[i]);
+                exit(1);
             }
         }
         i = i + 1;
