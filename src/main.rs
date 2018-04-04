@@ -40,16 +40,19 @@ fn main() {
         i = i + 1;
     }
 
+    // Test config file
     let config: &Path = Path::new(&config);
     if !config.is_file() {
         println!("sync: error: config file '{}' does not exists", config.to_string_lossy())
     }
 
+    // Open and read config file
     let mut config: File = File::open(config).expect("file not found");
     let mut contents: String = String::new();
     config.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
 
+    // Parse toml config file to Config struct
     let config: Config = toml::from_str(contents.as_str()).unwrap();
 
     println!("Config:\n{:?}", config);
