@@ -62,19 +62,68 @@ fn main() {
     // Parse toml config file to Config struct
     let config: Config = toml::from_str(contents.as_str()).unwrap();
 
-    // Simple repository clone
-    let output = Command::new("git")
-        .arg("clone")
-        .arg(config.main.repository.as_str())
-        .arg("sync")
-        .current_dir("/tmp")
-        .output()
-        .expect("command failed");
+    // If repository already exists and is clean pull it, otherwise should be fixed manually
+    if Path::new("/tmp/sync").is_dir() {
 
-    if output.status.code().expect("no status") != 0 {
-        println!("sync: error: failed to clone repository: '{}'", config.main.repository);
-        exit(1);
+        // Check if the repository is clean
+        let output = Command::new("git")
+            .arg("status")
+            .arg("--porcelain")
+            .current_dir("/tmp/sync")
+            .output()
+            .expect("sync: error: command: 'git status --porcelain' failed");
+
+        if output.status.code().expect("no status") != 0 {
+            println!("sync: error: failed to git status dir: '{}'", "/tmp/sync");
+            exit(1);
+        }
+
+        if output.stdout.len() != 0 {
+            println!("sync: error: the git directory: '{}' is dirty", "/tmp/sync");
+            exit(1);
+        }
+
+        // Check if the repository is aligned with the remote
+        // TODO: Check only if push is required
+        let output = Command::new("git")
+            .arg("diff")
+            .arg("origin/master")
+            .current_dir("/tmp/sync")
+            .output()
+            .expect("sync: error: command: 'git diff origin/master' failed");
+
+        if output.status.code().expect("no status") != 0 {
+            println!("sync: error: failed to 'git diff origin/master'");
+            exit(1);
+        }
+
+        if output.stdout.len() != 0 {
+            println!("sync: error: the git directory: '{}' is not aligned with the remote", "/tmp/sync");
+            exit(1);
+        }
+
+        // Pull
+
+    } else {
+
+        // Simple repository clone
+        let output = Command::new("git")
+            .arg("clone")
+            .arg(config.main.repository.as_str())
+            .arg("sync")
+            .current_dir("/tmp")
+            .output()
+            .expect("sync: error: command: 'git clone ?? sync' failed");
+
+        if output.status.code().expect("no status") != 0 {
+            println!("sync: error: failed to clone repository: '{}'", config.main.repository);
+            exit(1);
+        }
     }
+
+    // Loop on configured files and copy them to the repository
+
+    // Commit the repository
 
     println!("Config:\n{:?}", config);
 }
