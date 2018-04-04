@@ -3,6 +3,7 @@ use std::path::Path;
 use std::process::exit;
 use std::fs::File;
 use std::io::prelude::*;
+use std::process::Command;
 
 extern crate toml;
 
@@ -43,7 +44,8 @@ fn main() {
     // Test config file
     let config: &Path = Path::new(&config);
     if !config.is_file() {
-        println!("sync: error: config file '{}' does not exists", config.to_string_lossy())
+        println!("sync: error: config file: '{}' does not exists", config.to_string_lossy());
+        exit(1);
     }
 
     // Open and read config file
@@ -54,6 +56,20 @@ fn main() {
 
     // Parse toml config file to Config struct
     let config: Config = toml::from_str(contents.as_str()).unwrap();
+
+    // Simple repository clone
+    let output = Command::new("git")
+        .arg("clone")
+        .arg(config.main.repository.as_str())
+        .arg("sync")
+        .current_dir("/tmp")
+        .output()
+        .expect("command failed");
+
+    if output.status.code().expect("no status") != 0 {
+        println!("sync: error: failed to clone repository: '{}'", config.main.repository);
+        exit(1);
+    }
 
     println!("Config:\n{:?}", config);
 }
