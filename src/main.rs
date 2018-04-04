@@ -1,16 +1,15 @@
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate regex;
+extern crate toml;
+
 use std::env;
 use std::path::Path;
 use std::process::exit;
 use std::fs::File;
 use std::io::prelude::*;
 use std::process::Command;
-
-extern crate toml;
-
-#[macro_use]
-extern crate serde_derive;
-
-extern crate serde;
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -54,7 +53,7 @@ fn main() {
     }
 
     // Open and read config file
-    let mut config: File = File::open(config).expect("file not found");
+    let mut config: File = File::open(config).unwrap();
     let mut contents: String = String::new();
     config.read_to_string(&mut contents)
         .expect("something went wrong reading the file");
@@ -65,44 +64,19 @@ fn main() {
     // If repository already exists and is clean pull it, otherwise should be fixed manually
     if Path::new("/tmp/sync").is_dir() {
 
-        // Check if the repository is clean
+        // Check if the repository is up to date
         let output = Command::new("git")
-            .arg("status")
-            .arg("--porcelain")
+            .arg("pull")
+            .arg("--ff-only")
             .current_dir("/tmp/sync")
             .output()
-            .expect("sync: error: command: 'git status --porcelain' failed");
+            .unwrap();
 
-        if output.status.code().expect("no status") != 0 {
-            println!("sync: error: failed to git status dir: '{}'", "/tmp/sync");
+        if output.status.code().unwrap() != 0 {
+            println!("sync: error: failed to git pull dir: '{}'", "/tmp/sync");
+            println!("  you need to fix this problem manually");
             exit(1);
         }
-
-        if output.stdout.len() != 0 {
-            println!("sync: error: the git directory: '{}' is dirty", "/tmp/sync");
-            exit(1);
-        }
-
-        // Check if the repository is aligned with the remote
-        // TODO: Check only if push is required
-        let output = Command::new("git")
-            .arg("diff")
-            .arg("origin/master")
-            .current_dir("/tmp/sync")
-            .output()
-            .expect("sync: error: command: 'git diff origin/master' failed");
-
-        if output.status.code().expect("no status") != 0 {
-            println!("sync: error: failed to 'git diff origin/master'");
-            exit(1);
-        }
-
-        if output.stdout.len() != 0 {
-            println!("sync: error: the git directory: '{}' is not aligned with the remote", "/tmp/sync");
-            exit(1);
-        }
-
-        // Pull
 
     } else {
 
@@ -113,9 +87,9 @@ fn main() {
             .arg("sync")
             .current_dir("/tmp")
             .output()
-            .expect("sync: error: command: 'git clone ?? sync' failed");
+            .unwrap();
 
-        if output.status.code().expect("no status") != 0 {
+        if output.status.code().unwrap() != 0 {
             println!("sync: error: failed to clone repository: '{}'", config.main.repository);
             exit(1);
         }
