@@ -5,6 +5,7 @@ extern crate toml;
 
 use std::collections::HashMap;
 use std::env;
+use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -102,10 +103,26 @@ fn main() {
     }
 
     // Loop on configured files and copy them to the repository
+    for (key, file) in config.files {
+        let source = Path::new(&file.file);
+        if !source.is_file() {
+            println!("sync: error: file: '{}' does not exists", source.to_string_lossy());
+            exit(1);
+        }
+
+        let destination = Path::new("/tmp/sync").join(&source.to_owned().strip_prefix("/").unwrap());
+
+        if !destination.parent().unwrap().exists() {
+            fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        }
+
+        println!("sync: {}: copy '{}' to '{}'", key, source.to_string_lossy(), destination.to_string_lossy());
+
+        fs::copy(source, destination).unwrap();
+    }
 
     // Commit the repository
 
-    println!("Config:\n{:?}", config);
 }
 
 fn help() {
