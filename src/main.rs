@@ -119,7 +119,21 @@ fn main() {
 
         println!("sync: {}: copy '{}' to '{}'", key, source.to_string_lossy(), destination.to_string_lossy());
 
-        fs::copy(source, destination).unwrap();
+        fs::copy(source, &destination).unwrap();
+
+        // Stash the copied file
+        let status = Command::new("git")
+            .arg("add")
+            .arg(destination.to_str().unwrap())
+            .current_dir("/tmp/sync")
+            .status()
+            .unwrap();
+
+        if status.code().unwrap() != 0 {
+            println!("sync: error: failed to add '{}'", destination.to_string_lossy());
+            println!("  you need to fix this problem manually");
+            exit(1);
+        }
     }
 
     // Commit the repository
