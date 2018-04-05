@@ -122,6 +122,13 @@ fn main() {
             .arg(destination.to_str().unwrap()));
     }
 
+    let output = git(Command::new("git").arg("status").arg("--porcelain"));
+    // TODO: Check this with a multi-line regex only for line starting with A
+    if output.stdout.len() == 0 {
+        println!("Nothing to commit");
+        exit(0);
+    }
+
     // Commit the repository
     let now: DateTime<Local> = SystemTime::now().into();
     git(Command::new("git")
