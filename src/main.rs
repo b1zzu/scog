@@ -104,6 +104,7 @@ fn main() {
 
     // Loop on configured files and copy them to the repository
     for (key, file) in config.files {
+        // TODO: Handle dirs
         let source = Path::new(&file.file);
         if !source.is_file() {
             println!("sync: error: file: '{}' does not exists", source.to_string_lossy());
@@ -122,7 +123,6 @@ fn main() {
     }
 
     // Commit the repository
-
 }
 
 fn help() {
