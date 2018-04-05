@@ -77,18 +77,9 @@ fn main() {
     if Path::new("/tmp/sync").is_dir() {
 
         // Check if the repository is up to date
-        let output = Command::new("git")
+        git(Command::new("git")
             .arg("pull")
-            .arg("--ff-only")
-            .current_dir("/tmp/sync")
-            .output()
-            .unwrap();
-
-        if output.status.code().unwrap() != 0 {
-            println!("sync: error: failed to git pull dir: '{}'", "/tmp/sync");
-            println!("  you need to fix this problem manually");
-            exit(1);
-        }
+            .arg("--ff-only"));
     } else {
 
         // Simple repository clone
@@ -126,35 +117,33 @@ fn main() {
         fs::copy(source, &destination).unwrap();
 
         // Stash the copied file
-        let status = Command::new("git")
+        git(Command::new("git")
             .arg("add")
-            .arg(destination.to_str().unwrap())
-            .current_dir("/tmp/sync")
-            .status()
-            .unwrap();
-
-        if status.code().unwrap() != 0 {
-            println!("sync: error: failed to add '{}'", destination.to_string_lossy());
-            println!("  you need to fix this problem manually");
-            exit(1);
-        }
+            .arg(destination.to_str().unwrap()));
     }
 
     // Commit the repository
     let now: DateTime<Local> = SystemTime::now().into();
-    let status = Command::new("git")
+    git(Command::new("git")
         .arg("commit")
         .arg("-m")
-        .arg(now.to_string().as_str())
-        .current_dir("/tmp/sync")
-        .status()
+        .arg(now.to_string().as_str()));
+
+    // Push the repository
+    git(Command::new("git")
+        .arg("push"));
+}
+
+fn git(command: &mut Command) -> std::process::Output {
+    let output = command.current_dir("/tmp/sync")
+        .output()
         .unwrap();
 
-    if status.code().unwrap() != 0 {
-        println!("sync: error: failed to commit");
-        println!("  you need to fix this problem manually");
-        exit(1);
+    if output.status.code().unwrap() != 0 {
+        panic!("don't have the time")
     }
+
+    output
 }
 
 fn help() {
