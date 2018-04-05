@@ -1,8 +1,11 @@
+extern crate chrono;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate toml;
 
+use chrono::DateTime;
+use chrono::offset::Local;
 use std::collections::HashMap;
 use std::env;
 use std::fs;
@@ -11,6 +14,7 @@ use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 use std::process::exit;
+use std::time::SystemTime;
 
 #[derive(Deserialize, Debug)]
 struct Config {
@@ -137,6 +141,20 @@ fn main() {
     }
 
     // Commit the repository
+    let now: DateTime<Local> = SystemTime::now().into();
+    let status = Command::new("git")
+        .arg("commit")
+        .arg("-m")
+        .arg(now.to_string().as_str())
+        .current_dir("/tmp/sync")
+        .status()
+        .unwrap();
+
+    if status.code().unwrap() != 0 {
+        println!("sync: error: failed to commit");
+        println!("  you need to fix this problem manually");
+        exit(1);
+    }
 }
 
 fn help() {
