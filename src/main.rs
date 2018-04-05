@@ -1,24 +1,31 @@
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
-extern crate regex;
 extern crate toml;
 
+use std::collections::HashMap;
 use std::env;
-use std::path::Path;
-use std::process::exit;
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
 use std::process::Command;
+use std::process::exit;
 
 #[derive(Deserialize, Debug)]
 struct Config {
-    main: Main,
+    main: ConfigMain,
+    files: HashMap<String, ConfigFile>,
 }
 
 #[derive(Deserialize, Debug)]
-struct Main {
+struct ConfigMain {
     repository: String,
+}
+
+#[derive(Deserialize, Debug)]
+struct ConfigFile {
+    file: String,
+    owner: String,
 }
 
 fn main() {
@@ -77,7 +84,6 @@ fn main() {
             println!("  you need to fix this problem manually");
             exit(1);
         }
-
     } else {
 
         // Simple repository clone
