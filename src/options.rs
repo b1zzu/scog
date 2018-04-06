@@ -1,4 +1,5 @@
-use std;
+use std::env;
+use std::process;
 
 pub struct Options {
     config: String
@@ -17,7 +18,7 @@ impl Options {
 }
 
 pub fn parse() -> Options {
-    let args: Vec<String> = std::env::args().collect();
+    let args: Vec<String> = env::args().collect();
     let mut o = Options::new();
 
     // first ( 0 ) arguments is the name of the program
@@ -33,7 +34,7 @@ pub fn parse() -> Options {
             }
             &_ => {
                 println!("sync: error: options: '{}' is not valid", args[i]);
-                std::process::exit(1);
+                process::exit(1);
             }
         }
         i = i + 1;
@@ -44,5 +45,5 @@ pub fn parse() -> Options {
 
 fn help() {
     println!("Usage: sync [--config FILE]");
-    std::process::exit(0)
+    process::exit(0)
 }
