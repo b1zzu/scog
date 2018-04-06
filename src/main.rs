@@ -7,7 +7,6 @@ extern crate toml;
 use chrono::DateTime;
 use chrono::offset::Local;
 use std::collections::HashMap;
-use std::env;
 use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
@@ -132,9 +131,4 @@ fn git(command: &mut Command) -> std::process::Output {
     }
 
     output
-}
-
-fn help() {
-    println!("Usage: sync [--config FILE]");
-    exit(0);
 }
