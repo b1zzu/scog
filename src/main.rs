@@ -16,6 +16,8 @@ use std::process::Command;
 use std::process::exit;
 use std::time::SystemTime;
 
+mod options;
+
 #[derive(Deserialize, Debug)]
 struct Config {
     main: ConfigMain,
@@ -34,31 +36,10 @@ struct ConfigFile {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    let mut config: String = String::from("config.toml");
-
-    // first ( 0 ) arguments is the name of the program
-    let mut i: usize = 1;
-    while i < args.len() {
-        match args[i].as_str() {
-            "--help" => help(),
-            "--config" => {
-                if (i + 1) < args.len() {
-                    i = i + 1;
-                    config = args[i].clone();
-                }
-            }
-            &_ => {
-                println!("sync: error: options: '{}' is not valid", args[i]);
-                exit(1);
-            }
-        }
-        i = i + 1;
-    }
+    let options = options::parse();
 
     // Test config file
-    let config: &Path = Path::new(&config);
+    let config: &Path = Path::new(options.get_config());
     if !config.is_file() {
         println!("sync: error: config file: '{}' does not exists", config.to_string_lossy());
         exit(1);
