@@ -6,52 +6,19 @@ extern crate toml;
 
 use chrono::DateTime;
 use chrono::offset::Local;
-use std::collections::HashMap;
 use std::fs;
-use std::fs::File;
-use std::io::prelude::*;
 use std::path::Path;
 use std::process::Command;
 use std::process::exit;
 use std::time::SystemTime;
 
 mod options;
-
-#[derive(Deserialize, Debug)]
-struct Config {
-    main: ConfigMain,
-    files: HashMap<String, ConfigFile>,
-}
-
-#[derive(Deserialize, Debug)]
-struct ConfigMain {
-    repository: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct ConfigFile {
-    file: String,
-    owner: String,
-}
+mod config;
 
 fn main() {
     let options = options::parse();
 
-    // Test config file
-    let config: &Path = Path::new(options.get_config());
-    if !config.is_file() {
-        println!("sync: error: config file: '{}' does not exists", config.to_string_lossy());
-        exit(1);
-    }
-
-    // Open and read config file
-    let mut config: File = File::open(config).unwrap();
-    let mut contents: String = String::new();
-    config.read_to_string(&mut contents)
-        .expect("something went wrong reading the file");
-
-    // Parse toml config file to Config struct
-    let config: Config = toml::from_str(contents.as_str()).unwrap();
+    let config = config::from(options.get_config());
 
     // If repository already exists and is clean pull it, otherwise should be fixed manually
     if Path::new("/tmp/sync").is_dir() {
