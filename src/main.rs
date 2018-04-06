@@ -14,6 +14,7 @@ use std::time::SystemTime;
 
 mod options;
 mod config;
+mod git;
 
 fn main() {
     let options = options::parse();
