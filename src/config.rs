@@ -22,7 +22,7 @@ pub struct File {
     pub owner: String,
 }
 
-pub fn from(file: &String) -> Config {
+pub fn load(file: &String) -> Config {
 
     // Test config file
     let config = path::Path::new(file);

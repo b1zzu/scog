@@ -18,7 +18,7 @@ mod config;
 fn main() {
     let options = options::parse();
 
-    let config = config::from(options.get_config());
+    let config = config::load(options.get_config());
 
     // If repository already exists and is clean pull it, otherwise should be fixed manually
     if Path::new("/tmp/sync").is_dir() {
