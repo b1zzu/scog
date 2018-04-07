@@ -17,12 +17,12 @@ impl<'a> Git<'a> {
         }
     }
 
-    fn arg<S: AsRef<OsStr>>(mut self, arg: S) -> Git<'a> {
+    pub fn arg<S: AsRef<OsStr>>(mut self, arg: S) -> Git<'a> {
         self.command.arg(arg);
         self
     }
 
-    fn execute(self) -> Output {
+    pub fn execute(self) -> Result<Output, Output> {
         let mut command = self.command;
 
         if self.repository.is_some() {
