@@ -47,7 +47,7 @@ pub fn parse(args: &Vec<String>) -> Options {
                 options.command = Command::Clone;
 
                 i = i + 1;
-                if i < args.len() {
+                if i >= args.len() {
                     println!("bog: 'bog clone' requires REPOSITORY argument.");
                     println!("Usage: bog clone REPOSITORY");
                     exit(1);
@@ -59,7 +59,7 @@ pub fn parse(args: &Vec<String>) -> Options {
                 options.command = Command::Checkout;
 
                 i = i + 1;
-                if i < args.len() {
+                if i >= args.len() {
                     println!("bog: 'bog checkout' requires BRANCH argument.");
                     println!("Usage: bog checkout BRANCH");
                     exit(1);
