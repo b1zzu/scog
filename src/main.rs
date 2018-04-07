@@ -23,6 +23,22 @@ fn main() {
     let home = home_dir().unwrap().join(".bog/");
     let project = home.as_path();
 
+    if options.get_help() {
+        help();
+        exit(0);
+    }
+
+    match options.get_command() {
+        options::Command::None => {
+            help();
+            exit(1)
+        },
+        options::Command::Clone => clone(),
+        options::Command::Checkout => checkout(),
+        options::Command::Pull => pull(),
+        options::Command::Push => push(),
+    }
+
     let config = config::load(project.join("config.yaml").as_path());
 
     // If repository already exists and is clean pull it, otherwise should be fixed manually
@@ -106,6 +122,19 @@ fn git(command: &mut Command) -> std::process::Output {
 }
 
 fn help() {
-    println!("Usage: sync [--config FILE]");
-    exit(0)
+    println!("Usage: bog COMMAND [ARGS]");
+    println!(" ");
+    println!("Command:");
+    println!("  clone           ...");
+    println!("  checkout        ...");
+    println!("  pull            ...");
+    println!("  push            ...");
 }
+
+fn clone() {}
+
+fn checkout() {}
+
+fn pull() {}
+
+fn push() {}

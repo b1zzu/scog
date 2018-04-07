@@ -1,5 +1,6 @@
 use std::process::exit;
 
+#[derive(Clone)]
 pub enum Command {
     None,
     Clone,
@@ -25,8 +26,12 @@ impl Options {
         }
     }
 
-    pub fn get_command(&self) -> &Command {
-        &self.command
+    pub fn get_command(&self) -> Command {
+        self.command.clone()
+    }
+
+    pub fn get_help(&self) -> bool {
+        self.help.clone()
     }
 }
 
