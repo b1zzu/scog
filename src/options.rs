@@ -11,7 +11,7 @@ pub enum Command {
 
 pub struct Options {
     command: Command,
-    repository: String,
+    repo: String,
     branch: String,
     help: bool,
 }
@@ -20,7 +20,7 @@ impl Options {
     fn new() -> Options {
         Options {
             command: Command::None,
-            repository: String::new(),
+            repo: String::new(),
             branch: String::new(),
             help: false,
         }
@@ -32,6 +32,10 @@ impl Options {
 
     pub fn get_help(&self) -> bool {
         self.help.clone()
+    }
+
+    pub fn get_repo(&self) -> String {
+        self.repo.clone()
     }
 }
 
@@ -48,12 +52,12 @@ pub fn parse(args: &Vec<String>) -> Options {
 
                 i = i + 1;
                 if i >= args.len() {
-                    println!("bog: 'bog clone' requires REPOSITORY argument.");
-                    println!("Usage: bog clone REPOSITORY");
+                    println!("bog: 'bog clone' requires REPO argument.");
+                    println!("Usage: bog clone REPO");
                     exit(1);
                 }
 
-                options.repository = args[i].clone();
+                options.repo = args[i].clone();
             },
             "checkout" => {
                 options.command = Command::Checkout;
