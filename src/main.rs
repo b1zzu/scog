@@ -4,6 +4,7 @@ extern crate serde_derive;
 
 use chrono::DateTime;
 use chrono::offset::Local;
+use git::Git;
 use std::env;
 use std::env::home_dir;
 use std::fs;
@@ -146,7 +147,7 @@ fn help() {
 }
 
 fn clone(repo: String, dir: &Path) {
-    git::clone(repo, dir)
+    Git::new(None).arg("clone").arg(repo).arg(dir).execute().unwrap();
 }
 
 fn checkout() {}

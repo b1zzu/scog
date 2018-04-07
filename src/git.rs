@@ -32,10 +32,10 @@ impl<'a> Git<'a> {
         let output = command.output().unwrap();
 
         if output.status.code().unwrap() != 0 {
-            panic!("{}", String::from_utf8(output.stderr).unwrap())
+            Err(output)
+        } else {
+            Ok(output)
         }
-
-        output
     }
 }
 
