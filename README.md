@@ -1,6 +1,6 @@
-# sync
+# bog
 
-Sync config files through multiple pc
+Sync config files through multiple pc using a remote git repository
 
 ## Target
 
