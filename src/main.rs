@@ -40,7 +40,7 @@ fn main() {
         },
 
         options::Command::Checkout => {
-            checkout()
+            checkout(dir, options.get_branch())
         },
 
         options::Command::Pull => {
@@ -138,7 +138,13 @@ fn clone(repo: String, dir: &Path) {
     Git::new(None).arg("clone").arg(repo).arg(dir).execute().unwrap();
 }
 
-fn checkout() {}
+fn checkout(repository: &Path, branch: String) {
+    let result = Git::new(Option::from(repository)).arg("checkout").arg(&branch).execute();
+
+    if result.is_err() {
+        Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(branch).execute().unwrap();
+    }
+}
 
 fn pull() {}
 
