@@ -46,7 +46,7 @@ fn main() {
         },
 
         options::Command::Push => {
-            push()
+            push(dir)
         },
     }
 
@@ -122,4 +122,31 @@ fn pull(repository: &Path) {
     }
 }
 
-fn push() {}
+fn push(repository: &Path) {
+    // TODO: Handle merge
+
+    let config = config::load(repository.join("config.yaml").as_path());
+
+    for file in config.get_files() {
+        // TODO: Handle dirs
+        let source = Path::new(file.get_file());
+        let destination = repository.join(&source.to_owned().strip_prefix("/").unwrap());
+        let destination = destination.as_path();
+
+        if !destination.parent().unwrap().exists() {
+            fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        }
+
+        fs::copy(source, &destination).unwrap();
+
+        Git::new(Option::from(repository)).arg("add").arg(destination).execute().unwrap();
+    }
+
+    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
+    if output.stdout.len() != 0 {
+        let now: DateTime<Local> = Local::now();
+        Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
+    }
+
+    Git::new(Option::from(repository)).arg("push").execute().unwrap();
+}
