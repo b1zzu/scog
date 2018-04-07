@@ -1,11 +1,10 @@
 extern crate chrono;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate toml;
 
 use chrono::DateTime;
 use chrono::offset::Local;
+use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -33,20 +32,20 @@ fn main() {
         // Simple repository clone
         let output = Command::new("git")
             .arg("clone")
-            .arg(config.main.repository.as_str())
+            .arg(config.repository.as_str())
             .arg("sync")
             .current_dir("/tmp")
             .output()
             .unwrap();
 
         if output.status.code().unwrap() != 0 {
-            println!("sync: error: failed to clone repository: '{}'", config.main.repository);
+            println!("sync: error: failed to clone repository: '{}'", config.repository);
             exit(1);
         }
     }
 
     // Loop on configured files and copy them to the repository
-    for (key, file) in config.files {
+    for file in config.files {
         // TODO: Handle dirs
         let source = Path::new(&file.file);
         if !source.is_file() {
@@ -60,7 +59,7 @@ fn main() {
             fs::create_dir_all(destination.parent().unwrap()).unwrap();
         }
 
-        println!("sync: {}: copy '{}' to '{}'", key, source.to_string_lossy(), destination.to_string_lossy());
+        println!("sync: {}: copy '{}' to '{}'", file.file, source.to_string_lossy(), destination.to_string_lossy());
 
         fs::copy(source, &destination).unwrap();
 
