@@ -124,18 +124,6 @@ fn main() {
 //        .arg("push"));
 }
 
-fn git(command: &mut Command) -> std::process::Output {
-    let output = command.current_dir("/tmp/sync")
-        .output()
-        .unwrap();
-
-    if output.status.code().unwrap() != 0 {
-        panic!("don't have the time")
-    }
-
-    output
-}
-
 fn help() {
     println!("Usage: bog COMMAND [ARGS]");
     println!(" ");
