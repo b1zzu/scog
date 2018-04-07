@@ -1,49 +1,81 @@
-use std::env;
-use std::path;
-use std::process;
+use std::process::exit;
 
-pub struct Options<'a> {
-    config: &'a path::Path
+pub enum Command {
+    None,
+    Clone,
+    Checkout,
+    Pull,
+    Push,
 }
 
-impl<'a> Options<'a> {
-    fn new() -> Options<'a> {
-        return Options {
-            config: path::Path::new("config.yaml")
-        };
+pub struct Options {
+    command: Command,
+    repository: String,
+    branch: String,
+    help: bool,
+}
+
+impl Options {
+    fn new() -> Options {
+        Options {
+            command: Command::None,
+            repository: String::new(),
+            branch: String::new(),
+            help: false,
+        }
     }
 
-    pub fn get_config(&self) -> &'a path::Path {
-        return &self.config;
+    pub fn get_command(&self) -> &Command {
+        &self.command
     }
 }
 
-pub fn parse<'a>(args: &'a Vec<String>) -> Options<'a> {
-    let mut o = Options::new();
+pub fn parse(args: &Vec<String>) -> Options {
+    let mut options = Options::new();
 
     // first ( 0 ) arguments is the name of the program
     let mut i: usize = 1;
     while i < args.len() {
         match args[i].as_str() {
-            "--help" => help(),
-            "--config" => {
-                if (i + 1) < args.len() {
-                    i = i + 1;
-                    o.config = path::Path::new(args.get(i).unwrap());
+            "--help" => options.help = true,
+            "clone" => {
+                options.command = Command::Clone;
+
+                i = i + 1;
+                if i < args.len() {
+                    println!("bog: 'bog clone' requires REPOSITORY argument.");
+                    println!("Usage: bog clone REPOSITORY");
+                    exit(1);
                 }
-            }
+
+                options.repository = args[i].clone();
+            },
+            "checkout" => {
+                options.command = Command::Checkout;
+
+                i = i + 1;
+                if i < args.len() {
+                    println!("bog: 'bog checkout' requires BRANCH argument.");
+                    println!("Usage: bog checkout BRANCH");
+                    exit(1);
+                }
+
+                options.branch = args[i].clone();
+            },
+            "pull" => {
+                options.command = Command::Pull;
+            },
+            "push" => {
+                options.command = Command::Push;
+            },
+
             &_ => {
-                println!("sync: error: options: '{}' is not valid", args[i]);
-                process::exit(1);
+                println!("bog: '{}' is not valid command", args[i]);
+                exit(1);
             }
         }
         i = i + 1;
     }
 
-    return o;
-}
-
-fn help() {
-    println!("Usage: sync [--config FILE]");
-    process::exit(0)
+    options
 }

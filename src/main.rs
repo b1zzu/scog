@@ -5,6 +5,7 @@ extern crate serde_derive;
 use chrono::DateTime;
 use chrono::offset::Local;
 use std::env;
+use std::env::home_dir;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -19,7 +20,10 @@ fn main() {
     let args = env::args().collect();
     let options = options::parse(&args);
 
-    let config = config::load(options.get_config());
+    let home = home_dir().unwrap().join(".bog/");
+    let project = home.as_path();
+
+    let config = config::load(project.join("config.yaml").as_path());
 
     // If repository already exists and is clean pull it, otherwise should be fixed manually
     if Path::new("/tmp/sync").is_dir() {
@@ -99,4 +103,9 @@ fn git(command: &mut Command) -> std::process::Output {
     }
 
     output
+}
+
+fn help() {
+    println!("Usage: sync [--config FILE]");
+    exit(0)
 }
