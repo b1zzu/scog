@@ -16,7 +16,8 @@ mod config;
 mod git;
 
 fn main() {
-    let options = options::parse();
+    let args = env::args().collect();
+    let options = options::parse(&args);
 
     let config = config::load(options.get_config());
 

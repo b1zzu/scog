@@ -1,24 +1,24 @@
 use std::env;
+use std::path;
 use std::process;
 
-pub struct Options {
-    config: String
+pub struct Options<'a> {
+    config: &'a path::Path
 }
 
-impl Options {
-    fn new() -> Options {
+impl<'a> Options<'a> {
+    fn new() -> Options<'a> {
         return Options {
-            config: String::from("config.toml")
+            config: path::Path::new("config.yaml")
         };
     }
 
-    pub fn get_config(&self) -> &String {
+    pub fn get_config(&self) -> &'a path::Path {
         return &self.config;
     }
 }
 
-pub fn parse() -> Options {
-    let args: Vec<String> = env::args().collect();
+pub fn parse<'a>(args: &'a Vec<String>) -> Options<'a> {
     let mut o = Options::new();
 
     // first ( 0 ) arguments is the name of the program
@@ -29,7 +29,7 @@ pub fn parse() -> Options {
             "--config" => {
                 if (i + 1) < args.len() {
                     i = i + 1;
-                    o.config = args.get(i).unwrap().clone();
+                    o.config = path::Path::new(args.get(i).unwrap());
                 }
             }
             &_ => {

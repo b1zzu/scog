@@ -19,10 +19,9 @@ pub struct File {
     pub owner: String,
 }
 
-pub fn load(file: &String) -> Config {
+pub fn load(config: &path::Path) -> Config {
 
     // Test config file
-    let config = path::Path::new(file);
     if !config.is_file() {
         println!("sync: error: The config file '{}' does not exists", config.to_string_lossy());
         process::exit(1);
