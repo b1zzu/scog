@@ -38,7 +38,3 @@ impl<'a> Git<'a> {
         }
     }
 }
-
-pub fn clone(repo: String, dir: &Path) {
-    Git::new(None).arg("clone").arg(repo).arg(dir).execute();
-}
