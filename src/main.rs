@@ -76,15 +76,18 @@ fn checkout(repository: &Path, branch: String) {
 }
 
 fn pull(repository: &Path) {
-    let now: DateTime<Local> = Local::now();
-    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(format!("_backup_{}", now.format("%F_%H-%M-%S_%f"))).execute().unwrap();
+    Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute().unwrap();
 
     let config = config::load(repository.join("config.yaml").as_path());
 
-    for file in config.files {
+    let now: DateTime<Local> = Local::now();
+    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(format!("_backup_{}", now.format("%F_%H-%M-%S_%f"))).execute().unwrap();
+
+    for file in config.get_files() {
         // TODO: Handle dirs
-        let source = Path::new(&file.file);
+        let source = Path::new(file.get_file());
         let destination = repository.join(&source.to_owned().strip_prefix("/").unwrap());
+        let destination = destination.as_path();
 
         if !destination.parent().unwrap().exists() {
             fs::create_dir_all(destination.parent().unwrap()).unwrap();
@@ -104,6 +107,19 @@ fn pull(repository: &Path) {
     Git::new(Option::from(repository)).arg("push").arg("-u").arg("origin").arg("HEAD").execute().unwrap();
 
     Git::new(Option::from(repository)).arg("checkout").arg("-").execute().unwrap();
+
+    for file in config.get_files() {
+        // TODO: Handle dirs
+        let destination = Path::new(file.get_file());
+        let source = repository.join(&destination.to_owned().strip_prefix("/").unwrap());
+        let source = source.as_path();
+
+        if !destination.parent().unwrap().exists() {
+            fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        }
+
+        fs::copy(source, &destination).unwrap();
+    }
 }
 
 fn push() {}

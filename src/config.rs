@@ -19,6 +19,18 @@ pub struct File {
     pub owner: String,
 }
 
+impl Config {
+    pub fn get_files(&self) -> &Vec<File> {
+        &self.files
+    }
+}
+
+impl File {
+    pub fn get_file(&self) -> &String {
+        &self.file
+    }
+}
+
 pub fn load(config: &path::Path) -> Config {
 
     // Test config file
