@@ -37,6 +37,10 @@ impl Options {
     pub fn get_repo(&self) -> String {
         self.repo.clone()
     }
+
+    pub fn get_branch(&self) -> String {
+        self.branch.clone()
+    }
 }
 
 pub fn parse(args: &Vec<String>) -> Options {
