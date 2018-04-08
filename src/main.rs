@@ -78,17 +78,19 @@ fn checkout(repository: &Path, branch: String) {
 fn pull(repository: &Path) {
     let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
     if output.stdout.len() != 0 {
-        println!("bog: '{}' is not clean. Clean it manually.", repository);
+        println!("bog: '{}' is not clean. Clean it manually.", repository.to_string_lossy());
         exit(1);
     }
 
     Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute().unwrap();
 
+    let now: DateTime<Local> = Local::now();
     let config = config::load(repository.join("config.yaml").as_path());
 
-    let now: DateTime<Local> = Local::now();
     // TODO: The backup branch should be called with the same name of the current branch
-    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(format!("_backup_{}_{}", "branch", now.format("%F_%H-%M-%S_%f"))).execute().unwrap();
+    let backup_branch = format!("_backup_{}_{}", "branch", now.format("%F_%H-%M-%S_%f"));
+
+    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(&backup_branch).execute().unwrap();
 
     for file in config.get_files() {
         // TODO: Handle dirs
@@ -105,16 +107,22 @@ fn pull(repository: &Path) {
         Git::new(Option::from(repository)).arg("add").arg(destination).execute().unwrap();
     }
 
+    let mut delete = false;
     let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
-    // TODO: drop branch if nothing changed
     if output.stdout.len() != 0 {
         let now: DateTime<Local> = Local::now();
         Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
+
+        Git::new(Option::from(repository)).arg("push").arg("-u").arg("origin").arg("HEAD").execute().unwrap();
+    } else {
+        delete = true;
     }
 
-    Git::new(Option::from(repository)).arg("push").arg("-u").arg("origin").arg("HEAD").execute().unwrap();
-
     Git::new(Option::from(repository)).arg("checkout").arg("-").execute().unwrap();
+
+    if delete {
+        Git::new(Option::from(repository)).arg("branch").arg("-d").arg(&backup_branch).execute().unwrap();
+    }
 
     for file in config.get_files() {
         // TODO: Handle dirs
@@ -133,7 +141,7 @@ fn pull(repository: &Path) {
 fn push(repository: &Path) {
     let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
     if output.stdout.len() != 0 {
-        println!("bog: '{}' is not clean. Clean it manually.", repository);
+        println!("bog: '{}' is not clean. Clean it manually.", repository.to_string_lossy());
         exit(1);
     }
     // TODO: Handle merge
