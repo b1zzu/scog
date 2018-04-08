@@ -159,5 +159,7 @@ fn push(repository: &Path) {
         Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
     }
 
+    pull(repository);
+
     Git::new(Option::from(repository)).arg("push").execute().unwrap();
 }
