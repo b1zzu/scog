@@ -165,8 +165,6 @@ fn push(repository: &Path) {
         exit(1);
     }
 
-    // TODO: Handle merge
-
     let config = config::load(repository.join("config.yaml").as_path());
 
     for file in config.get_files() {
