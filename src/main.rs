@@ -1,10 +1,12 @@
 extern crate chrono;
+extern crate regex;
 #[macro_use]
 extern crate serde_derive;
 
 use chrono::DateTime;
 use chrono::offset::Local;
 use git::Git;
+use regex::Regex;
 use std::env;
 use std::env::home_dir;
 use std::fs;
@@ -82,13 +84,22 @@ fn pull(repository: &Path) {
         exit(1);
     }
 
+    let output = Git::new(Option::from(repository)).arg("rev-parse").arg("--abbrev-ref").arg("HEAD").execute().unwrap();
+    let current_branch = String::from_utf8(output.stdout).unwrap();
+    let current_branch = String::from(current_branch.trim());
+
+    if Regex::new(r"^_backup").unwrap().is_match(current_branch.as_str()) {
+        println!("bog: can not pull from backup branch: '{}'", current_branch);
+        exit(1);
+    }
+
     Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute().unwrap();
 
     let now: DateTime<Local> = Local::now();
     let config = config::load(repository.join("config.yaml").as_path());
 
     // TODO: The backup branch should be called with the same name of the current branch
-    let backup_branch = format!("_backup_{}_{}", "branch", now.format("%F_%H-%M-%S_%f"));
+    let backup_branch = format!("_backup_{}_{}", current_branch, now.format("%F_%H-%M-%S_%f"));
 
     Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(&backup_branch).execute().unwrap();
 
@@ -118,7 +129,7 @@ fn pull(repository: &Path) {
         delete = true;
     }
 
-    Git::new(Option::from(repository)).arg("checkout").arg("-").execute().unwrap();
+    Git::new(Option::from(repository)).arg("checkout").arg(current_branch).execute().unwrap();
 
     if delete {
         Git::new(Option::from(repository)).arg("branch").arg("-d").arg(&backup_branch).execute().unwrap();
@@ -144,6 +155,16 @@ fn push(repository: &Path) {
         println!("bog: '{}' is not clean. Clean it manually.", repository.to_string_lossy());
         exit(1);
     }
+
+    let output = Git::new(Option::from(repository)).arg("rev-parse").arg("--abbrev-ref").arg("HEAD").execute().unwrap();
+    let current_branch = String::from_utf8(output.stdout).unwrap();
+    let current_branch = String::from(current_branch.trim());
+
+    if Regex::new(r"^_backup").unwrap().is_match(current_branch.as_str()) {
+        println!("bog: can not push to backup branch '{}'", current_branch);
+        exit(1);
+    }
+
     // TODO: Handle merge
 
     let config = config::load(repository.join("config.yaml").as_path());
