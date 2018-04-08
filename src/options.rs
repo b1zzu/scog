@@ -26,20 +26,20 @@ impl Options {
         }
     }
 
-    pub fn get_command(&self) -> Command {
-        self.command.clone()
+    pub fn get_command(&self) -> &Command {
+        &self.command
     }
 
-    pub fn get_help(&self) -> bool {
-        self.help.clone()
+    pub fn get_help(&self) -> &bool {
+        &self.help
     }
 
-    pub fn get_repo(&self) -> String {
-        self.repo.clone()
+    pub fn get_repo(&self) -> &String {
+        &self.repo
     }
 
-    pub fn get_branch(&self) -> String {
-        self.branch.clone()
+    pub fn get_branch(&self) -> &String {
+        &self.branch
     }
 }
 

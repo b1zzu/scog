@@ -24,12 +24,12 @@ fn main() {
     let dir = home_dir().unwrap().join(".bog/");
     let dir = dir.as_path();
 
-    if options.get_help() {
+    if *options.get_help() {
         help();
         exit(0);
     }
 
-    match options.get_command() {
+    match *options.get_command() {
         options::Command::None => {
             help();
             exit(1)
@@ -65,11 +65,11 @@ fn help() {
     println!("  push            ...");
 }
 
-fn clone(repo: String, dir: &Path) {
+fn clone(repo: &String, dir: &Path) {
     Git::new(None).arg("clone").arg(repo).arg(dir).execute().unwrap();
 }
 
-fn checkout(repository: &Path, branch: String) {
+fn checkout(repository: &Path, branch: &String) {
     let result = Git::new(Option::from(repository)).arg("checkout").arg(&branch).execute();
 
     if result.is_err() {
