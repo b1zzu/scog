@@ -21,38 +21,46 @@ fn main() {
     let args = env::args().collect();
     let options = options::parse(&args);
 
-    let dir = home_dir().unwrap().join(".bog/");
-    let dir = dir.as_path();
+    let repository = home_dir().unwrap().join(".bog/");
+    let repository = repository.as_path();
 
     if *options.get_help() {
         help();
         exit(0);
     }
 
-    match *options.get_command() {
+    let result: Result<(), String> = match *options.get_command() {
         options::Command::None => {
             help();
-            exit(1)
+            Err(String::new())
         },
 
         options::Command::Clone => {
-            clone(options.get_repo(), dir)
+            clone(options.get_repo(), repository)
         },
 
         options::Command::Checkout => {
-            checkout(dir, options.get_branch())
+            checkout(repository, options.get_branch())
         },
 
         options::Command::Pull => {
-            pull(dir)
+            pull(repository)
         },
 
         options::Command::Push => {
-            push(dir)
+            push(repository)
         },
-    }
+    };
 
-    exit(0);
+    match result {
+        Ok(()) => {
+            exit(0)
+        }
+        Err(e) => {
+            println!("bog: {}", e);
+            exit(1)
+        }
+    }
 }
 
 fn help() {
@@ -65,23 +73,23 @@ fn help() {
     println!("  push            ...");
 }
 
-fn clone(repo: &String, dir: &Path) {
+fn clone(repo: &String, dir: &Path) -> Result<(), String> {
     Git::new(None).arg("clone").arg(repo).arg(dir).execute().unwrap();
+    Ok(())
 }
 
-fn checkout(repository: &Path, branch: &String) {
+fn checkout(repository: &Path, branch: &String) -> Result<(), String> {
     let result = Git::new(Option::from(repository)).arg("checkout").arg(&branch).execute();
-
     if result.is_err() {
         Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(branch).execute().unwrap();
     }
+    Ok(())
 }
 
-fn pull(repository: &Path) {
+fn pull(repository: &Path) -> Result<(), String> {
     let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
     if output.stdout.len() != 0 {
-        println!("bog: '{}' is not clean. Clean it manually.", repository.to_string_lossy());
-        exit(1);
+        return Err(format!("'{}' is not clean. Clean it manually.", repository.to_string_lossy()));
     }
 
     let output = Git::new(Option::from(repository)).arg("rev-parse").arg("--abbrev-ref").arg("HEAD").execute().unwrap();
@@ -89,16 +97,12 @@ fn pull(repository: &Path) {
     let current_branch = String::from(current_branch.trim());
 
     if Regex::new(r"^_backup").unwrap().is_match(current_branch.as_str()) {
-        println!("bog: can not pull from backup branch: '{}'", current_branch);
-        exit(1);
+        return Err(format!("can not pull from backup branch: '{}'.", current_branch));
     }
 
     let result = Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute();
     if result.is_err() {
-        println!("bog: can not merge remote changes with local changes.");
-        println!("  Fix it manually in: '{}'.", repository.to_string_lossy());
-        println!("  Then 'bog pull' to update local files.");
-        exit(1)
+        return Err(format!("can not merge remote changes with local changes.\n  Fix it manually in: '{}'.\n  Then 'bog pull' to update local files.", repository.to_string_lossy()))
     }
 
     let now: DateTime<Local> = Local::now();
@@ -153,13 +157,14 @@ fn pull(repository: &Path) {
 
         fs::copy(source, &destination).unwrap();
     }
+
+    Ok(())
 }
 
-fn push(repository: &Path) {
+fn push(repository: &Path) -> Result<(), String> {
     let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
     if output.stdout.len() != 0 {
-        println!("bog: '{}' is not clean. Clean it manually.", repository.to_string_lossy());
-        exit(1);
+        return Err(format!("'{}' is not clean. Clean it manually.", repository.to_string_lossy()))
     }
 
     let output = Git::new(Option::from(repository)).arg("rev-parse").arg("--abbrev-ref").arg("HEAD").execute().unwrap();
@@ -167,8 +172,7 @@ fn push(repository: &Path) {
     let current_branch = String::from(current_branch.trim());
 
     if Regex::new(r"^_backup").unwrap().is_match(current_branch.as_str()) {
-        println!("bog: can not push to backup branch '{}'", current_branch);
-        exit(1);
+        return Err(format!("can not push to backup branch '{}'", current_branch));
     }
 
     let config = config::load(repository.join("config.yaml").as_path());
@@ -194,7 +198,12 @@ fn push(repository: &Path) {
         Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
     }
 
-    pull(repository);
+    let result = pull(repository);
+    if result.is_err() {
+        return result
+    }
 
     Git::new(Option::from(repository)).arg("push").execute().unwrap();
+
+    Ok(())
 }
