@@ -76,6 +76,12 @@ fn checkout(repository: &Path, branch: String) {
 }
 
 fn pull(repository: &Path) {
+    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
+    if output.stdout.len() != 0 {
+        println!("bog: '{}' is not clean. Clean it manually.", repository);
+        exit(1);
+    }
+
     Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute().unwrap();
 
     let config = config::load(repository.join("config.yaml").as_path());
@@ -123,6 +129,11 @@ fn pull(repository: &Path) {
 }
 
 fn push(repository: &Path) {
+    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
+    if output.stdout.len() != 0 {
+        println!("bog: '{}' is not clean. Clean it manually.", repository);
+        exit(1);
+    }
     // TODO: Handle merge
 
     let config = config::load(repository.join("config.yaml").as_path());
