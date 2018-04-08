@@ -93,7 +93,13 @@ fn pull(repository: &Path) {
         exit(1);
     }
 
-    Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute().unwrap();
+    let result = Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute();
+    if result.is_err() {
+        println!("bog: can not merge remote changes with local changes.");
+        println!("  Fix it manually in: '{}'.", repository.to_string_lossy());
+        println!("  Then 'bog pull' to update local files.");
+        exit(1)
+    }
 
     let now: DateTime<Local> = Local::now();
     let config = config::load(repository.join("config.yaml").as_path());
