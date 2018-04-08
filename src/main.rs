@@ -105,6 +105,7 @@ fn pull(repository: &Path) {
     }
 
     let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
+    // TODO: drop branch if nothing changed
     if output.stdout.len() != 0 {
         let now: DateTime<Local> = Local::now();
         Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
