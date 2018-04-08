@@ -87,7 +87,8 @@ fn pull(repository: &Path) {
     let config = config::load(repository.join("config.yaml").as_path());
 
     let now: DateTime<Local> = Local::now();
-    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(format!("_backup_{}", now.format("%F_%H-%M-%S_%f"))).execute().unwrap();
+    // TODO: The backup branch should be called with the same name of the current branch
+    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(format!("_backup_{}_{}", "branch", now.format("%F_%H-%M-%S_%f"))).execute().unwrap();
 
     for file in config.get_files() {
         // TODO: Handle dirs
