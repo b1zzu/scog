@@ -4,7 +4,6 @@ extern crate serde_yaml;
 use std::fs;
 use std::io::Read;
 use std::path;
-use std::process;
 use std::str;
 
 #[derive(Deserialize)]
@@ -31,12 +30,11 @@ impl File {
     }
 }
 
-pub fn load(config: &path::Path) -> Config {
+pub fn load(config: &path::Path) -> Result<Config, String> {
 
     // Test config file
     if !config.is_file() {
-        println!("sync: error: The config file '{}' does not exists", config.to_string_lossy());
-        process::exit(1);
+        return Err(format!("the config file '{}' does not exists.", config.to_string_lossy()));
     }
 
     // Open and read config file
@@ -45,5 +43,5 @@ pub fn load(config: &path::Path) -> Config {
     config.read_to_end(&mut buffer).unwrap();
 
     // Parse toml config file to Config struct
-    return serde_yaml::from_str(str::from_utf8(&buffer).unwrap()).unwrap();
+    Ok(serde_yaml::from_str(str::from_utf8(&buffer).unwrap()).unwrap())
 }

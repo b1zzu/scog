@@ -105,10 +105,12 @@ fn pull(repository: &Path) -> Result<(), String> {
         return Err(format!("can not merge remote changes with local changes.\n  Fix it manually in: '{}'.\n  Then 'bog pull' to update local files.", repository.to_string_lossy()))
     }
 
-    let now: DateTime<Local> = Local::now();
-    let config = config::load(repository.join("config.yaml").as_path());
+    let config = match config::load(repository.join("config.yaml").as_path()) {
+        Ok(c) => c,
+        Err(e) => return Err(e),
+    };
 
-    // TODO: The backup branch should be called with the same name of the current branch
+    let now: DateTime<Local> = Local::now();
     let backup_branch = format!("_backup_{}_{}", current_branch, now.format("%F_%H-%M-%S_%f"));
 
     Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(&backup_branch).execute().unwrap();
@@ -175,7 +177,10 @@ fn push(repository: &Path) -> Result<(), String> {
         return Err(format!("can not push to backup branch '{}'", current_branch));
     }
 
-    let config = config::load(repository.join("config.yaml").as_path());
+    let config = match config::load(repository.join("config.yaml").as_path()) {
+        Ok(c) => c,
+        Err(e) => return Err(e),
+    };
 
     for file in config.get_files() {
         // TODO: Handle dirs
