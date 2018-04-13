@@ -22,19 +22,19 @@ impl Git {
         Git { command }
     }
 
-    pub fn arg(mut self, arg: &str) -> Git {
+    pub fn arg<S: AsRef<OsStr>>(mut self, arg: S) -> Git {
         self.command.arg(arg);
         self
     }
 
-    pub fn args(mut self, args: Vec<&str>) -> Git {
+    pub fn args<S: AsRef<OsStr>>(mut self, args: Vec<S>) -> Git {
         for arg in args {
             self = self.arg(arg)
         }
         self
     }
 
-    pub fn clone<S: AsRef<OsStr>>(mut self, options: Vec<S>, repository: S, directory: S) -> Result {
+    pub fn clone<S: AsRef<OsStr>>(mut self, options: Vec<S>, repository: S, directory: &Path) -> Result {
         self.args(options).arg("--").arg(repository).arg(directory).execute()
     }
 
