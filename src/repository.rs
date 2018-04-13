@@ -13,7 +13,7 @@ impl<'a> Repository<'a> {
     }
 
     pub fn clone(&self, url: &str) -> Result {
-        Git::new(None).arg("clone").arg(url).arg(self.repository.to_str().unwrap()).execute()
+        Git::new(None).clone(Vec::new(), url, self.repository)
     }
 
     fn _git(&self, command: &str) -> Git {
