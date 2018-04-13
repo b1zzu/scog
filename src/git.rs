@@ -1,4 +1,5 @@
 use core::result::Result as CoreResult;
+use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Command;
 use std::process::Output;
@@ -31,6 +32,10 @@ impl Git {
             self = self.arg(arg)
         }
         self
+    }
+
+    pub fn clone<S: AsRef<OsStr>>(mut self, options: Vec<S>, repository: S, directory: S) -> Result {
+        self.args(options).arg("--").arg(repository).arg(directory).execute()
     }
 
     pub fn execute(mut self) -> Result {
