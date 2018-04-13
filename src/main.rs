@@ -1,64 +1,68 @@
 extern crate chrono;
+extern crate core;
 extern crate regex;
 #[macro_use]
 extern crate serde_derive;
 
 use chrono::DateTime;
 use chrono::offset::Local;
-use git::Git;
+use core::result::Result as CoreResult;
 use regex::Regex;
+use repository::Repository;
 use std::env;
-use std::env::home_dir;
 use std::fs;
 use std::path::Path;
-use std::process::exit;
+use std::process;
 
 mod options;
 mod config;
 mod git;
+mod repository;
+
+type Result = CoreResult<(), String>;
 
 fn main() {
     let args = env::args().collect();
     let options = options::parse(&args);
 
-    let repository = home_dir().unwrap().join(".bog/");
+    let repository = env::home_dir().unwrap().join(".bog/");
     let repository = repository.as_path();
 
     if *options.get_help() {
         help();
-        exit(0);
+        process::exit(0);
     }
 
-    let result: Result<(), String> = match *options.get_command() {
+    let result: Result = match *options.get_command() {
         options::Command::None => {
             help();
-            Err(String::new())
-        },
+            Err(String::from("no command defined"))
+        }
 
         options::Command::Clone => {
-            clone(options.get_repo(), repository)
-        },
+            clone(repository, options.get_repo())
+        }
 
         options::Command::Checkout => {
             checkout(repository, options.get_branch())
-        },
+        }
 
         options::Command::Pull => {
             pull(repository)
-        },
+        }
 
         options::Command::Push => {
             push(repository)
-        },
+        }
     };
 
     match result {
         Ok(()) => {
-            exit(0)
+            process::exit(0)
         }
         Err(e) => {
-            println!("bog: {}", e);
-            exit(1)
+            println!("error: {}", e);
+            process::exit(1)
         }
     }
 }
@@ -73,36 +77,31 @@ fn help() {
     println!("  push            ...");
 }
 
-fn clone(repo: &String, dir: &Path) -> Result<(), String> {
-    Git::new(None).arg("clone").arg(repo).arg(dir).execute().unwrap();
+fn clone(repository: &Path, remote: &String) -> Result {
+    Repository::new(repository).clone(remote).unwrap();
     Ok(())
 }
 
-fn checkout(repository: &Path, branch: &String) -> Result<(), String> {
-    let result = Git::new(Option::from(repository)).arg("checkout").arg(&branch).execute();
-    if result.is_err() {
-        Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(branch).execute().unwrap();
+fn checkout(repository: &Path, branch: &String) -> Result {
+    let r = Repository::new(repository);
+    let o = r.checkout(branch);
+    if o.is_err() {
+        r.checkout_new(branch).unwrap();
     }
     Ok(())
 }
 
-fn pull(repository: &Path) -> Result<(), String> {
-    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
-    if output.stdout.len() != 0 {
-        return Err(format!("'{}' is not clean. Clean it manually.", repository.to_string_lossy()));
+fn pull(repository: &Path) -> Result {
+    let r = Repository::new(repository);
+
+    if !r.is_clean() {
+        return Err(String::from("repository is not clean"));
     }
 
-    let output = Git::new(Option::from(repository)).arg("rev-parse").arg("--abbrev-ref").arg("HEAD").execute().unwrap();
-    let current_branch = String::from_utf8(output.stdout).unwrap();
-    let current_branch = String::from(current_branch.trim());
+    let current_branch = r.get_current_branch();
 
     if Regex::new(r"^_backup").unwrap().is_match(current_branch.as_str()) {
         return Err(format!("can not pull from backup branch: '{}'.", current_branch));
-    }
-
-    let result = Git::new(Option::from(repository)).arg("pull").arg("--ff-only").execute();
-    if result.is_err() {
-        return Err(format!("can not merge remote changes with local changes.\n  Fix it manually in: '{}'.\n  Then 'bog pull' to update local files.", repository.to_string_lossy()))
     }
 
     let config = match config::load(repository.join("config.yaml").as_path()) {
@@ -112,8 +111,9 @@ fn pull(repository: &Path) -> Result<(), String> {
 
     let now: DateTime<Local> = Local::now();
     let backup_branch = format!("_backup_{}_{}", current_branch, now.format("%F_%H-%M-%S_%f"));
+    let backup_branch = backup_branch.as_str();
 
-    Git::new(Option::from(repository)).arg("checkout").arg("-b").arg(&backup_branch).execute().unwrap();
+    r.checkout_new(&backup_branch).unwrap();
 
     for file in config.get_files() {
         // TODO: Handle dirs
@@ -127,24 +127,21 @@ fn pull(repository: &Path) -> Result<(), String> {
 
         fs::copy(source, &destination).unwrap();
 
-        Git::new(Option::from(repository)).arg("add").arg(destination).execute().unwrap();
+        r.add(destination).unwrap();
     }
 
     let mut delete = false;
-    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
-    if output.stdout.len() != 0 {
+    if !r.is_clean() {
         let now: DateTime<Local> = Local::now();
-        Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
-
-        Git::new(Option::from(repository)).arg("push").arg("-u").arg("origin").arg("HEAD").execute().unwrap();
+        r.commit(now.to_string().as_str()).unwrap();
+        r.push_new_branch().unwrap();
     } else {
         delete = true;
     }
 
-    Git::new(Option::from(repository)).arg("checkout").arg(current_branch).execute().unwrap();
-
+    r.checkout(current_branch.as_str()).unwrap();
     if delete {
-        Git::new(Option::from(repository)).arg("branch").arg("-d").arg(&backup_branch).execute().unwrap();
+        r.branch_delete(&backup_branch).unwrap();
     }
 
     for file in config.get_files() {
@@ -163,18 +160,17 @@ fn pull(repository: &Path) -> Result<(), String> {
     Ok(())
 }
 
-fn push(repository: &Path) -> Result<(), String> {
-    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
-    if output.stdout.len() != 0 {
-        return Err(format!("'{}' is not clean. Clean it manually.", repository.to_string_lossy()))
+fn push(repository: &Path) -> Result {
+    let r = Repository::new(repository);
+
+    if !r.is_clean() {
+        return Err(String::from("repository is not clean"));
     }
 
-    let output = Git::new(Option::from(repository)).arg("rev-parse").arg("--abbrev-ref").arg("HEAD").execute().unwrap();
-    let current_branch = String::from_utf8(output.stdout).unwrap();
-    let current_branch = String::from(current_branch.trim());
+    let current_branch = r.get_current_branch();
 
     if Regex::new(r"^_backup").unwrap().is_match(current_branch.as_str()) {
-        return Err(format!("can not push to backup branch '{}'", current_branch));
+        return Err(format!("can not pull from backup branch: '{}'.", current_branch));
     }
 
     let config = match config::load(repository.join("config.yaml").as_path()) {
@@ -194,21 +190,20 @@ fn push(repository: &Path) -> Result<(), String> {
 
         fs::copy(source, &destination).unwrap();
 
-        Git::new(Option::from(repository)).arg("add").arg(destination).execute().unwrap();
+        r.add(destination).unwrap();
     }
 
-    let output = Git::new(Option::from(repository)).arg("status").arg("--porcelain").execute().unwrap();
-    if output.stdout.len() != 0 {
+    if !r.is_clean() {
         let now: DateTime<Local> = Local::now();
-        Git::new(Option::from(repository)).arg("commit").arg("-m").arg(now.to_string()).execute().unwrap();
+        r.commit(now.to_string().as_str()).unwrap();
     }
 
     let result = pull(repository);
     if result.is_err() {
-        return result
+        return result;
     }
 
-    Git::new(Option::from(repository)).arg("push").execute().unwrap();
+    r.push().unwrap();
 
     Ok(())
 }
