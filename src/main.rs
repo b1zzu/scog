@@ -7,6 +7,7 @@ extern crate serde_derive;
 use chrono::DateTime;
 use chrono::offset::Local;
 use core::result::Result as CoreResult;
+use options::Options;
 use regex::Regex;
 use repository::Repository;
 use std::env;
@@ -22,8 +23,7 @@ mod repository;
 type Result = CoreResult<(), String>;
 
 fn main() {
-    let args = env::args().collect();
-    let options = options::parse(&args);
+    let options = options().unwrap();
 
     let repository = env::home_dir().unwrap().join(".scog/");
     let repository = repository.as_path();
@@ -61,10 +61,27 @@ fn main() {
             process::exit(0)
         }
         Err(e) => {
-            println!("error: {}", e);
-            process::exit(1)
+            error(e)
         }
     }
+}
+
+fn options() -> Option<Options> {
+    let result = Options::parse(env::args().collect());
+    match result {
+        Ok(options) => {
+            Some(options)
+        }
+        Err(e) => {
+            error(e);
+            None
+        }
+    }
+}
+
+fn error(e: String) {
+    println!("scog: {}", e);
+    process::exit(1)
 }
 
 fn help() {
