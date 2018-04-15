@@ -16,25 +16,25 @@ impl<'a> Repository<'a> {
         Git::new(None).clone(Vec::new(), url, self.repository)
     }
 
-    fn _git(&self, command: &str) -> Git {
+    fn git(&self, command: &str) -> Git {
         Git::new(Some(self.repository)).arg(command)
     }
 
 
     fn _checkout(&self, options: Vec<&str>, branch: &str) -> Result {
-        self._git("checkout").args(options).arg(branch).execute()
+        self.git("checkout").args(options).arg(branch).execute()
     }
 
     fn _status(&self, options: Vec<&str>) -> Result {
-        self._git("status").args(options).execute()
+        self.git("status").args(options).execute()
     }
 
     fn _rev_parse(&self, option: &str, args: Vec<&str>) -> Result {
-        self._git("rev-parse").arg(option).args(args).execute()
+        self.git("rev-parse").arg(option).args(args).execute()
     }
 
     fn _add(&self, options: Vec<&str>, pathspec: Vec<&str>) -> Result {
-        self._git("add").args(options).args(pathspec).execute()
+        self.git("add").args(options).args(pathspec).execute()
     }
 
     pub fn checkout(&self, branch: &str) -> Result {
@@ -67,11 +67,11 @@ impl<'a> Repository<'a> {
     }
 
     pub fn commit(&self, message: &str) -> Result {
-        self._git("commit").args(vec!["-m", message]).execute()
+        self.git("commit").args(vec!["-m", message]).execute()
     }
 
     pub fn _push(&self, options: Vec<&str>) -> Result {
-        self._git("push").args(options).execute()
+        self.git("push").args(options).execute()
     }
 
     pub fn push(&self) -> Result {
@@ -83,6 +83,6 @@ impl<'a> Repository<'a> {
     }
 
     pub fn branch_delete(&self, branch: &str) -> Result {
-        self._git("branch").args(vec!["-d", branch]).execute()
+        self.git("branch").args(vec!["-d", branch]).execute()
     }
 }
