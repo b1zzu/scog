@@ -1,5 +1,4 @@
 use core::result::Result as CoreResult;
-use std::ffi::OsStr;
 use std::path::Path;
 use std::process::Command;
 use std::process::Output;
@@ -22,20 +21,56 @@ impl Git {
         Git { command }
     }
 
-    pub fn arg<S: AsRef<OsStr>>(mut self, arg: S) -> Git {
+    pub fn arg(mut self, arg: &str) -> Git {
         self.command.arg(arg);
         self
     }
 
-    pub fn args<S: AsRef<OsStr>>(mut self, args: Vec<S>) -> Git {
+    pub fn args(mut self, args: Vec<&str>) -> Git {
         for arg in args {
             self = self.arg(arg)
         }
         self
     }
 
-    pub fn clone<S: AsRef<OsStr>>(mut self, options: Vec<S>, repository: S, directory: &Path) -> Result {
-        self.args(options).arg("--").arg(repository).arg(directory).execute()
+    pub fn pathspec(self, pathspecs: Vec<&str>) -> Git {
+        if pathspecs.len() != 0 {
+            self.arg("--").args(pathspecs)
+        } else {
+            self
+        }
+    }
+
+    pub fn clone(self, options: Vec<&str>, repository: &str, directory: &str) -> Result {
+        self.arg("clone").args(options).arg("--").arg(repository).arg(directory).execute()
+    }
+
+    pub fn checkout(self, options: Vec<&str>, branch: &str) -> Result {
+        self.arg("checkout").args(options).arg(branch).execute()
+    }
+
+    pub fn status(self, options: Vec<&str>, pathspecs: Vec<&str>) -> Result {
+        self.arg("status").args(options).pathspec(pathspecs).execute()
+    }
+
+    pub fn rev_parse(self, option: &str, args: Vec<&str>) -> Result {
+        self.arg("rev-parse").arg(option).args(args).execute()
+    }
+
+    pub fn add(self, options: Vec<&str>, pathspecs: Vec<&str>) -> Result {
+        self.arg("add").args(options).pathspec(pathspecs).execute()
+    }
+
+    pub fn commit(self, options: Vec<&str>, files: Vec<&str>) -> Result {
+        self.arg("commit").args(options).pathspec(files).execute()
+    }
+
+    pub fn push(self, options: Vec<&str>) -> Result {
+        self.arg("push").args(options).execute()
+    }
+
+    pub fn branch(self, options: Vec<&str>) -> Result {
+        self.arg("branch").args(options).execute()
     }
 
     pub fn execute(mut self) -> Result {

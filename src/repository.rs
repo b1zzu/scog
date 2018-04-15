@@ -12,45 +12,33 @@ impl<'a> Repository<'a> {
         return Repository { repository };
     }
 
-    fn git(&self, command: &str) -> Git {
-        Git::new(Some(self.repository)).arg(command)
+    fn git(&self) -> Git {
+        Git::new(Some(self.repository))
     }
 
     pub fn clone(&self, url: &str) -> Result {
-        Git::new(None).clone(Vec::new(), url, self.repository)
-    }
-
-    fn _checkout(&self, options: Vec<&str>, branch: &str) -> Result {
-        self.git("checkout").args(options).arg(branch).execute()
-    }
-
-    fn _status(&self, options: Vec<&str>) -> Result {
-        self.git("status").args(options).execute()
-    }
-
-    fn _rev_parse(&self, option: &str, args: Vec<&str>) -> Result {
-        self.git("rev-parse").arg(option).args(args).execute()
-    }
-
-    fn _add(&self, options: Vec<&str>, pathspec: Vec<&str>) -> Result {
-        self.git("add").args(options).args(pathspec).execute()
+        Git::new(None)
+            .clone(Vec::new(), url, self.repository.to_str().unwrap())
     }
 
     pub fn checkout(&self, branch: &str) -> Result {
-        self._checkout(vec![], branch)
+        self.git()
+            .checkout(vec![], branch)
     }
 
     pub fn checkout_new(&self, branch: &str) -> Result {
-        self._checkout(vec!["-b"], branch)
+        self.git()
+            .checkout(vec!["-b"], branch)
     }
 
     pub fn status_porcelain(&self) -> Result {
-        self._status(vec!["--porcelain"])
+        self.git()
+            .status(vec!["--porcelain"], vec![])
     }
 
     pub fn is_clean(&self) -> bool {
-        let o = self.status_porcelain().unwrap();
-        if o.stdout.len() != 0 {
+        let output = self.status_porcelain().unwrap();
+        if output.stdout.len() != 0 {
             false
         } else {
             true
@@ -58,30 +46,28 @@ impl<'a> Repository<'a> {
     }
 
     pub fn get_current_branch(&self) -> String {
-        String::from_utf8(self._rev_parse("--abbrev-ref", vec!["HEAD"]).unwrap().stdout).unwrap()
+        let branch = self.git()
+            .rev_parse("--abbrev-ref", vec!["HEAD"]).unwrap().stdout;
+        String::from_utf8(branch).unwrap()
     }
 
     pub fn add(&self, pathspec: &Path) -> Result {
-        self._add(vec![], vec![pathspec.to_str().unwrap()])
+        self.git().add(vec![], vec![pathspec.to_str().unwrap()])
     }
 
     pub fn commit(&self, message: &str) -> Result {
-        self.git("commit").args(vec!["-m", message]).execute()
-    }
-
-    pub fn _push(&self, options: Vec<&str>) -> Result {
-        self.git("push").args(options).execute()
+        self.git().commit(vec!["-m", message], vec![])
     }
 
     pub fn push(&self) -> Result {
-        self._push(vec![])
+        self.git().push(vec![])
     }
 
     pub fn push_new_branch(&self) -> Result {
-        self._push(vec!["-u", "origin", "HEAD"])
+        self.git().push(vec!["-u", "origin", "HEAD"])
     }
 
     pub fn branch_delete(&self, branch: &str) -> Result {
-        self.git("branch").args(vec!["-d", branch]).execute()
+        self.git().branch(vec!["-d", branch])
     }
 }
