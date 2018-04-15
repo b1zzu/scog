@@ -8,14 +8,16 @@ use std::str;
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub repository: String,
-    pub files: Vec<File>,
+    // TODO:
+    // repository: String,
+    files: Vec<File>,
 }
 
 #[derive(Deserialize)]
 pub struct File {
-    pub file: String,
-    pub owner: String,
+    file: String,
+    // TODO:
+    // owner: String,
 }
 
 impl Config {
