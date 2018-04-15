@@ -25,7 +25,7 @@ fn main() {
     let args = env::args().collect();
     let options = options::parse(&args);
 
-    let repository = env::home_dir().unwrap().join(".bog/");
+    let repository = env::home_dir().unwrap().join(".scog/");
     let repository = repository.as_path();
 
     if *options.get_help() {
@@ -68,7 +68,7 @@ fn main() {
 }
 
 fn help() {
-    println!("Usage: bog COMMAND [ARGS]");
+    println!("Usage: scog COMMAND [ARGS]");
     println!(" ");
     println!("Command:");
     println!("  clone           ...");

@@ -1,5 +1,6 @@
 [package]
-name = "bog"
+name = "scog"
+description = "Sync Config Over Git"
 version = "0.1.0"
 authors = ["Davide Bizzarri <davide@bizzarri.me>"]
 

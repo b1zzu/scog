@@ -1,4 +1,4 @@
-# bog
+# Sync Config Over Git
 
 Sync config files through multiple pc using a remote git repository
 
@@ -13,24 +13,24 @@ files:
 
 ## How should it work
 
-Clone the remote repository in `$HOME/.bog`
+Clone the remote repository in `$HOME/.scog`
 ```
-bog clone REPOSITORY
+scog clone REPOSITORY
 ```
 
 Checkout the branch, if it don't exists create it. The branch can not start with an underscore.
 ```
-bog checkout BRANCH
+scog checkout BRANCH
 ```
 
 Checkout new branch called _%date, copy local files to _%date branch, commit them, push the branch,
 checkout the previous branch, pull new changes from remote, copy file from repository to local.
 ```
-bog pull
+scog pull
 ```
 
 Copy local file to repository, commit them, pull new changes from server with --only-ff (Conflicts must be fixed manually),
 push new changes, copy files form repository to local.
 ```
-bog push
+scog push
 ```
