@@ -58,10 +58,10 @@ fn main() {
 
     match result {
         Ok(()) => {
-            process::exit(0)
+            process::exit(0);
         }
         Err(e) => {
-            error(e)
+            error(e);
         }
     }
 }
@@ -81,7 +81,7 @@ fn options() -> Option<Options> {
 
 fn error(e: String) {
     println!("scog: {}", e);
-    process::exit(1)
+    process::exit(1);
 }
 
 fn help() {
