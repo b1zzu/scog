@@ -12,14 +12,13 @@ impl<'a> Repository<'a> {
         return Repository { repository };
     }
 
-    pub fn clone(&self, url: &str) -> Result {
-        Git::new(None).clone(Vec::new(), url, self.repository)
-    }
-
     fn git(&self, command: &str) -> Git {
         Git::new(Some(self.repository)).arg(command)
     }
 
+    pub fn clone(&self, url: &str) -> Result {
+        Git::new(None).clone(Vec::new(), url, self.repository)
+    }
 
     fn _checkout(&self, options: Vec<&str>, branch: &str) -> Result {
         self.git("checkout").args(options).arg(branch).execute()
