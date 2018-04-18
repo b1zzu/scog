@@ -15,6 +15,7 @@ mod config;
 mod git;
 mod repository;
 mod app;
+mod controller;
 
 fn main() {
     let options = options().unwrap();

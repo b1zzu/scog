@@ -8,6 +8,8 @@ use regex::Regex;
 use repository::Repository;
 use std::fs;
 use std::path::Path;
+use controller::ver;
+use controller::with;
 
 pub type Result<'a> = CoreResult<App<'a>, String>;
 
@@ -38,11 +40,11 @@ impl<'c> App<'c> {
             }
 
             Command::Pull => {
-                App::ver(App::is_clean, App::ver(App::is_not_backup, App::with(App::config, App::box_pull())))(self)
+                ver(App::is_clean, ver(App::is_not_backup, with(App::config, App::box_pull())))(self)
             }
 
             Command::Push => {
-                App::ver(App::is_clean, App::ver(App::is_not_backup, App::with(App::config, App::box_push())))(self)
+                ver(App::is_clean, ver(App::is_not_backup, with(App::config, App::box_push())))(self)
             }
         }
     }
@@ -60,28 +62,11 @@ impl<'c> App<'c> {
         Ok(self)
     }
 
-    fn with<T: 'static>(method: fn(&App) -> (CoreResult<T, String>), next: Box<Fn(App, T) -> Result>) -> Box<Fn(App) -> Result> {
-        Box::new(move |app: App| -> Result {
-            match method(&app) {
-                Ok(t) => next(app, t),
-                Err(e) => Err(e),
-            }
-        })
-    }
-
     fn config(app: &App) -> CoreResult<Config, String> {
         let config = Config::load(app.destination.join("config.yaml").as_path()).unwrap();
         Ok(config)
     }
 
-    fn ver(method: fn(app: App) -> Result, next: Box<Fn(App) -> Result>) -> Box<Fn(App) -> Result> {
-        Box::new(move |app: App| -> Result {
-            match method(app) {
-                Ok(a) => next(a),
-                Err(e) => Err(e),
-            }
-        })
-    }
 
     fn is_clean(app: App) -> Result {
         match app.repository.is_clean() {
