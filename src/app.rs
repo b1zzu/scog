@@ -38,20 +38,13 @@ impl<'c> App<'c> {
             }
 
             Command::Pull => {
-                App::ver_clean(App::ver_branch(App::with_config(App::box_pull())))(self)
+                App::ver(App::is_clean, App::ver(App::is_not_backup, App::with_config(App::box_pull())))(self)
             }
 
             Command::Push => {
-                App::ver_clean(App::ver_branch(App::with_config(App::box_push())))(self)
+                App::ver(App::is_clean, App::ver(App::is_not_backup, App::with_config(App::box_push())))(self)
             }
         }
-    }
-
-    fn with_config(next: Box<Fn(App, Config) -> Result>) -> Box<Fn(App) -> Result> {
-        Box::new(move |app: App| {
-            let config = Config::load(app.destination.join("config.yaml").as_path()).unwrap();
-            next(app, config)
-        })
     }
 
     fn clone(self, remote: &String) -> Result<'c> {
@@ -67,25 +60,35 @@ impl<'c> App<'c> {
         Ok(self)
     }
 
-    fn ver_clean(next: Box<Fn(App) -> Result>) -> Box<Fn(App) -> Result> {
+    fn with_config(next: Box<Fn(App, Config) -> Result>) -> Box<Fn(App) -> Result> {
+        Box::new(move |app: App| {
+            let config = Config::load(app.destination.join("config.yaml").as_path()).unwrap();
+            next(app, config)
+        })
+    }
+
+    fn ver(method: fn(app: App) -> Result, next: Box<Fn(App) -> Result>) -> Box<Fn(App) -> Result> {
         Box::new(move |app: App| -> Result {
-            if app.repository.is_clean() {
-                next(app)
-            } else {
-                Err(String::from("repository is not clean"))
+            match method(app) {
+                Ok(a) => next(a),
+                Err(e) => Err(e),
             }
         })
     }
 
-    fn ver_branch(next: Box<Fn(App) -> Result>) -> Box<Fn(App) -> Result> {
-        Box::new(move |app: App| -> Result {
-            let branch = app.repository.get_current_branch();
-            if !Regex::new(r"^_backup").unwrap().is_match(branch.as_str()) {
-                next(app)
-            } else {
-                Err(format!("can not pull from backup branch: '{}'.", branch))
-            }
-        })
+    fn is_clean(app: App) -> Result {
+        match app.repository.is_clean() {
+            true => Ok(app),
+            false => Err(String::from("repository is not clean")),
+        }
+    }
+
+    fn is_not_backup(app: App) -> Result {
+        let branch = app.repository.get_current_branch();
+        match Regex::new(r"^_backup").unwrap().is_match(branch.as_str()) {
+            false => Ok(app),
+            true => Err(format!("can not pull from backup branch: '{}'.", branch)),
+        }
     }
 
     fn box_pull() -> Box<Fn(App, Config) -> Result> {
