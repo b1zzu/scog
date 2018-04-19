@@ -8,8 +8,8 @@ use regex::Regex;
 use repository::Repository;
 use std::fs;
 use std::path::Path;
-use controller::ver;
-use controller::with;
+use controller::step;
+use controller::end;
 
 pub type Result<'a> = CoreResult<App<'a>, String>;
 
@@ -40,11 +40,11 @@ impl<'c> App<'c> {
             }
 
             Command::Pull => {
-                ver(App::is_clean, ver(App::is_not_backup, with(App::config, App::box_pull())))(self)
+                step(Self::is_clean, step(Self::is_not_backup, end(Self::pull)))(self)
             }
 
             Command::Push => {
-                ver(App::is_clean, ver(App::is_not_backup, with(App::config, App::box_push())))(self)
+                step(Self::is_clean, step(Self::is_not_backup, end(Self::push)))(self)
             }
         }
     }
@@ -62,10 +62,10 @@ impl<'c> App<'c> {
         Ok(self)
     }
 
-    fn config(app: &App) -> CoreResult<Config, String> {
-        let config = Config::load(app.destination.join("config.yaml").as_path()).unwrap();
-        Ok(config)
-    }
+//    fn config(app: &App) -> CoreResult<Config, String> {
+//        let config = Config::load(app.destination.join("config.yaml").as_path()).unwrap();
+//        Ok(config)
+//    }
 
 
     fn is_clean(app: App) -> Result {
@@ -83,13 +83,8 @@ impl<'c> App<'c> {
         }
     }
 
-    fn box_pull() -> Box<Fn(App, Config) -> Result> {
-        Box::new(|a: App, c: Config| -> Result {
-            a.pull(c)
-        })
-    }
-
-    fn pull(self, config: Config) -> Result<'c> {
+    fn pull(self) -> Result<'c> {
+        let config = Config::load(self.destination.join("config.yaml").as_path()).unwrap();
         let branch = self.repository.get_current_branch();
 
         let now: DateTime<Local> = Local::now();
@@ -142,13 +137,8 @@ impl<'c> App<'c> {
         Ok(self)
     }
 
-    fn box_push() -> Box<Fn(App, Config) -> Result> {
-        Box::new(|app: App, config: Config| -> Result {
-            app.push(config)
-        })
-    }
-
-    fn push(self, config: Config) -> Result<'c> {
+    fn push(self) -> Result<'c> {
+        let config = Config::load(self.destination.join("config.yaml").as_path()).unwrap();
         for file in config.get_files() {
             // TODO: Handle dirs
             let source = Path::new(file.get_file());
@@ -169,7 +159,7 @@ impl<'c> App<'c> {
             self.repository.commit(now.to_string().as_str()).unwrap();
         }
 
-        match self.pull(config) {
+        match self.pull() {
             Ok(a) => {
                 a.repository.push().unwrap();
                 Ok(a)
