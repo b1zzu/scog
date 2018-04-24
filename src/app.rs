@@ -148,6 +148,10 @@ impl<'c> App<'c> {
         for file in config.get_files() {
             // TODO: Handle dirs
             let source = Path::new(file.get_file());
+            if !source.is_file() {
+                continue
+            }
+
             let destination = self.repository_path.join(&source.to_owned().strip_prefix("/").unwrap());
             let destination = destination.as_path();
 
