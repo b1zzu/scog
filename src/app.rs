@@ -10,6 +10,7 @@ use std::fs;
 use std::path::Path;
 use controller::step;
 use controller::end;
+use std::path::PathBuf;
 
 pub type AppResult<'a> = Result<App<'a>, String>;
 
@@ -144,41 +145,50 @@ impl<'c> App<'c> {
 
     fn copy_to_repo(&self) {
         let config = self.load_config();
-
         for file in config.get_files() {
-            // TODO: Handle dirs
-            let source = Path::new(file.get_file());
-            if !source.is_file() {
-                continue
+            let source = file.get_file();
+            let destination = self.repository_path.join(source.strip_prefix("/").unwrap());
+            let result = Self::copy(source, destination).unwrap();
+            for destination in result {
+                self.repository.add(destination.as_path()).unwrap();
             }
-
-            let destination = self.repository_path.join(&source.to_owned().strip_prefix("/").unwrap());
-            let destination = destination.as_path();
-
-            if !destination.parent().unwrap().exists() {
-                fs::create_dir_all(destination.parent().unwrap()).unwrap();
-            }
-
-            fs::copy(source, &destination).unwrap();
-
-            self.repository.add(destination).unwrap();
         }
     }
 
     fn copy_to_disk(&self) {
         let config = self.load_config();
-
         for file in config.get_files() {
-            // TODO: Handle dirs
-            let destination = Path::new(file.get_file());
-            let source = self.repository_path.join(&destination.to_owned().strip_prefix("/").unwrap());
-            let source = source.as_path();
+            let destination = file.get_file();
+            let source = self.repository_path.join(destination.strip_prefix("/").unwrap());
+            Self::copy(source, destination).unwrap();
+        }
+    }
 
-            if !destination.parent().unwrap().exists() {
-                fs::create_dir_all(destination.parent().unwrap()).unwrap();
+    fn copy(source: PathBuf, destination: PathBuf) -> Result<Vec<PathBuf>, ()> {
+        if source.exists() {
+            if source.is_file() {
+                if destination.is_dir() {
+                    panic!("destination is a directory")
+                }
+                if !destination.parent().unwrap().exists() {
+                    fs::create_dir_all(destination.parent().unwrap()).unwrap();
+                }
+                fs::copy(&source, &destination).unwrap();
+                Ok(vec![destination])
+            } else if source.is_dir() {
+                let mut result: Vec<PathBuf> = vec![];
+                for _source in fs::read_dir(&source).unwrap() {
+                    let _source: PathBuf = _source.unwrap().path();
+                    let _destination: PathBuf = destination.join(_source.strip_prefix(&source).unwrap());
+                    let mut _result = Self::copy(_source, _destination).unwrap();
+                    result.append(&mut _result);
+                }
+                Ok(result)
+            } else {
+                panic!("destination is not a file and not a dir")
             }
-
-            fs::copy(source, &destination).unwrap();
+        } else {
+            Ok(vec![])
         }
     }
 }

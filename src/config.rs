@@ -5,6 +5,7 @@ use std::fs;
 use std::io::Read;
 use std::path;
 use std::str;
+use std::path::PathBuf;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -43,8 +44,8 @@ impl Config {
 }
 
 impl File {
-    pub fn get_file(&self) -> &String {
-        &self.file
+    pub fn get_file(&self) -> PathBuf {
+        PathBuf::from(&self.file)
     }
 }
 
