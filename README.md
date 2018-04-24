@@ -34,3 +34,10 @@ push new changes, copy files form repository to local.
 ```
 scog push
 ```
+
+
+# TODO:
+
+* Create continuous integration
+* New option add for add file to backup
+* Preserve owner when copy files
