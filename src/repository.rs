@@ -1,5 +1,5 @@
 use git::Git;
-use git::Result;
+use git::GitResult;
 use std::path::Path;
 use std::str;
 
@@ -16,22 +16,22 @@ impl<'a> Repository<'a> {
         Git::new(Some(self.repository))
     }
 
-    pub fn clone(&self, url: &str) -> Result {
+    pub fn clone(&self, url: &str) -> GitResult {
         Git::new(None)
             .clone(Vec::new(), url, self.repository.to_str().unwrap())
     }
 
-    pub fn checkout(&self, branch: &str) -> Result {
+    pub fn checkout(&self, branch: &str) -> GitResult {
         self.git()
             .checkout(vec![], branch)
     }
 
-    pub fn checkout_new(&self, branch: &str) -> Result {
+    pub fn checkout_new(&self, branch: &str) -> GitResult {
         self.git()
             .checkout(vec!["-b"], branch)
     }
 
-    pub fn status_porcelain(&self) -> Result {
+    pub fn status_porcelain(&self) -> GitResult {
         self.git()
             .status(vec!["--porcelain"], vec![])
     }
@@ -51,23 +51,27 @@ impl<'a> Repository<'a> {
         String::from_utf8(branch).unwrap()
     }
 
-    pub fn add(&self, pathspec: &Path) -> Result {
+    pub fn add(&self, pathspec: &Path) -> GitResult {
         self.git().add(vec![], vec![pathspec.to_str().unwrap()])
     }
 
-    pub fn commit(&self, message: &str) -> Result {
+    pub fn commit(&self, message: &str) -> GitResult {
         self.git().commit(vec!["-m", message], vec![])
     }
 
-    pub fn push(&self) -> Result {
+    pub fn push(&self) -> GitResult {
         self.git().push(vec![])
     }
 
-    pub fn push_new_branch(&self) -> Result {
+    pub fn pull(&self) -> GitResult {
+        self.git().pull(vec!["--ff-only"], None, vec![])
+    }
+
+    pub fn push_new_branch(&self) -> GitResult {
         self.git().push(vec!["-u", "origin", "HEAD"])
     }
 
-    pub fn branch_delete(&self, branch: &str) -> Result {
+    pub fn branch_delete(&self, branch: &str) -> GitResult {
         self.git().branch(vec!["-d", branch])
     }
 }

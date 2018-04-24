@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use chrono::Local;
 use config::Config;
-use core::result::Result as CoreResult;
+use core::result::Result;
 use options::Command;
 use options::Options;
 use regex::Regex;
@@ -11,10 +11,10 @@ use std::path::Path;
 use controller::step;
 use controller::end;
 
-pub type Result<'a> = CoreResult<App<'a>, String>;
+pub type AppResult<'a> = Result<App<'a>, String>;
 
 pub struct App<'b> {
-    destination: &'b Path,
+    repository_path: &'b Path,
     repository: Repository<'b>,
 }
 
@@ -22,10 +22,10 @@ impl<'c> App<'c> {
     pub fn new(repository: &'c Path) -> App<'c> {
         let destination = repository;
         let repository = Repository::new(destination);
-        App { repository, destination }
+        App { repository, repository_path: destination }
     }
 
-    pub fn route(self, options: Options) -> Result<'c> {
+    pub fn route(self, options: Options) -> AppResult<'c> {
         match *options.get_command() {
             Command::None => {
                 Err(String::from("no command defined"))
@@ -44,17 +44,18 @@ impl<'c> App<'c> {
             }
 
             Command::Push => {
-                step(Self::is_clean, step(Self::is_not_backup, end(Self::push)))(self)
+                step(Self::is_clean, step(Self::is_not_backup, end(Self::push))
+                )(self)
             }
         }
     }
 
-    fn clone(self, remote: &String) -> Result<'c> {
+    fn clone(self, remote: &String) -> AppResult<'c> {
         self.repository.clone(remote).unwrap();
         Ok(self)
     }
 
-    fn checkout(self, branch: &String) -> Result<'c> {
+    fn checkout(self, branch: &String) -> AppResult<'c> {
         let result = self.repository.checkout(branch);
         if result.is_err() {
             self.repository.checkout_new(branch).unwrap();
@@ -62,20 +63,18 @@ impl<'c> App<'c> {
         Ok(self)
     }
 
-//    fn config(app: &App) -> CoreResult<Config, String> {
-//        let config = Config::load(app.destination.join("config.yaml").as_path()).unwrap();
-//        Ok(config)
-//    }
+    fn load_config(&self) -> Config {
+        Config::load(self.repository_path.join("config.yaml").as_path()).unwrap()
+    }
 
-
-    fn is_clean(app: App) -> Result {
+    fn is_clean(app: App) -> AppResult {
         match app.repository.is_clean() {
             true => Ok(app),
             false => Err(String::from("repository is not clean")),
         }
     }
 
-    fn is_not_backup(app: App) -> Result {
+    fn is_not_backup(app: App) -> AppResult {
         let branch = app.repository.get_current_branch();
         match Regex::new(r"^_backup").unwrap().is_match(branch.as_str()) {
             false => Ok(app),
@@ -83,81 +82,40 @@ impl<'c> App<'c> {
         }
     }
 
-    fn pull(self) -> Result<'c> {
-        let config = Config::load(self.destination.join("config.yaml").as_path()).unwrap();
+    fn pull(self) -> AppResult<'c> {
         let branch = self.repository.get_current_branch();
+        let branch = branch.as_str();
 
-        let now: DateTime<Local> = Local::now();
+        self.repository.pull().unwrap();
+
+        let now = Self::get_now();
         let backup_branch = format!("_backup_{}_{}", branch, now.format("%F_%H-%M-%S_%f"));
         let backup_branch = backup_branch.as_str();
         self.repository.checkout_new(&backup_branch).unwrap();
 
-        for file in config.get_files() {
-            // TODO: Handle dirs
-            let source = Path::new(file.get_file());
-            let destination = self.destination.join(&source.to_owned().strip_prefix("/").unwrap());
-            let destination = destination.as_path();
+        self.copy_to_repo();
 
-            if !destination.parent().unwrap().exists() {
-                fs::create_dir_all(destination.parent().unwrap()).unwrap();
-            }
+        let committed = self.commit();
 
-            fs::copy(source, &destination).unwrap();
-
-            self.repository.add(destination).unwrap();
-        }
-
-        let mut delete = false;
-        if !self.repository.is_clean() {
-            let now: DateTime<Local> = Local::now();
-            self.repository.commit(now.to_string().as_str()).unwrap();
+        if committed {
             self.repository.push_new_branch().unwrap();
-        } else {
-            delete = true;
         }
 
-        self.repository.checkout(branch.as_str()).unwrap();
-        if delete {
+        self.repository.checkout(branch).unwrap();
+
+        if !committed {
             self.repository.branch_delete(&backup_branch).unwrap();
         }
 
-        for file in config.get_files() {
-            // TODO: Handle dirs
-            let destination = Path::new(file.get_file());
-            let source = self.destination.join(&destination.to_owned().strip_prefix("/").unwrap());
-            let source = source.as_path();
-
-            if !destination.parent().unwrap().exists() {
-                fs::create_dir_all(destination.parent().unwrap()).unwrap();
-            }
-
-            fs::copy(source, &destination).unwrap();
-        }
+        self.copy_to_disk();
 
         Ok(self)
     }
 
-    fn push(self) -> Result<'c> {
-        let config = Config::load(self.destination.join("config.yaml").as_path()).unwrap();
-        for file in config.get_files() {
-            // TODO: Handle dirs
-            let source = Path::new(file.get_file());
-            let destination = self.destination.join(&source.to_owned().strip_prefix("/").unwrap());
-            let destination = destination.as_path();
+    fn push(self) -> AppResult<'c> {
+        self.copy_to_repo();
 
-            if !destination.parent().unwrap().exists() {
-                fs::create_dir_all(destination.parent().unwrap()).unwrap();
-            }
-
-            fs::copy(source, &destination).unwrap();
-
-            self.repository.add(destination).unwrap();
-        }
-
-        if !self.repository.is_clean() {
-            let now: DateTime<Local> = Local::now();
-            self.repository.commit(now.to_string().as_str()).unwrap();
-        }
+        self.commit();
 
         match self.pull() {
             Ok(a) => {
@@ -167,6 +125,56 @@ impl<'c> App<'c> {
             Err(e) => {
                 Err(e)
             }
+        }
+    }
+
+    fn get_now() -> DateTime<Local> {
+        Local::now()
+    }
+
+    fn commit(&self) -> bool {
+        if !self.repository.is_clean() {
+            let now = Self::get_now();
+            self.repository.commit(now.to_string().as_str()).unwrap();
+            true
+        } else {
+            false
+        }
+    }
+
+    fn copy_to_repo(&self) {
+        let config = self.load_config();
+
+        for file in config.get_files() {
+            // TODO: Handle dirs
+            let source = Path::new(file.get_file());
+            let destination = self.repository_path.join(&source.to_owned().strip_prefix("/").unwrap());
+            let destination = destination.as_path();
+
+            if !destination.parent().unwrap().exists() {
+                fs::create_dir_all(destination.parent().unwrap()).unwrap();
+            }
+
+            fs::copy(source, &destination).unwrap();
+
+            self.repository.add(destination).unwrap();
+        }
+    }
+
+    fn copy_to_disk(&self) {
+        let config = self.load_config();
+
+        for file in config.get_files() {
+            // TODO: Handle dirs
+            let destination = Path::new(file.get_file());
+            let source = self.repository_path.join(&destination.to_owned().strip_prefix("/").unwrap());
+            let source = source.as_path();
+
+            if !destination.parent().unwrap().exists() {
+                fs::create_dir_all(destination.parent().unwrap()).unwrap();
+            }
+
+            fs::copy(source, &destination).unwrap();
         }
     }
 }

@@ -5,7 +5,7 @@ extern crate regex;
 extern crate serde_derive;
 
 use app::App;
-use app::Result;
+use app::AppResult;
 use options::Options;
 use std::env;
 use std::process;
@@ -30,7 +30,7 @@ fn main() {
 
     let app = App::new(repository);
 
-    let result: Result = app.route(options);
+    let result: AppResult = app.route(options);
 
     match result {
         Ok(_) => {
