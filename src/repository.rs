@@ -48,7 +48,7 @@ impl<'a> Repository<'a> {
     pub fn get_current_branch(&self) -> String {
         let branch = self.git()
             .rev_parse("--abbrev-ref", vec!["HEAD"]).unwrap().stdout;
-        String::from_utf8(branch).unwrap()
+        String::from(String::from_utf8(branch).unwrap().trim())
     }
 
     pub fn add(&self, pathspec: &Path) -> GitResult {
