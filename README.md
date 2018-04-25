@@ -30,7 +30,7 @@ scog checkout BRANCH
 ```
 
 Checkout new branch called `_backup_%branch_%date`, copy local files to `_backup_%branch_%date` branch, commit them, push the branch,
-checkout the previous branch, pull new changes from remote with --only-ff (Conflicts must be fixed manually), copy file from repository to local.
+checkout the previous branch, pull new changes from remote with `--only-ff` (Conflicts must be fixed manually), copy file from repository to local.
 ```bash
 scog pull
 ```
