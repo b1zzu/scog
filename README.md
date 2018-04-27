@@ -6,8 +6,13 @@ Sync config files through multiple pc using a remote git repository
 
 Install Rust and Cargo
 
+Build scog
 ```bash
 cargo build
+```
+
+Execute
+```bash
 ./target/debug/scog
 ```
 
