@@ -34,13 +34,13 @@ Checkout the branch, if it don't exists create it. The branch can not start with
 scog checkout BRANCH
 ```
 
-Checkout new branch called `_backup_%branch_%date`, copy local files to `_backup_%branch_%date` branch, commit them, push the branch,
-checkout the previous branch, pull new changes from remote with `--only-ff` (Conflicts must be fixed manually), copy file from repository to local.
+Checkout new branch called `_backup_%branch_%date`, copy local files to `_backup_%branch_%date` branch, commit them,
+checkout the previous branch, pull new changes from remote only if fast forward is possible, copy file from repository to local disk.
 ```bash
 scog pull
 ```
 
-Copy local file to repository, commit them, execute same steps of `scog pull`, push new changes.
+Copy local files to repository, commit them, execute same steps of `scog pull`, push new changes.
 ```bash
 scog push
 ```
@@ -48,7 +48,6 @@ scog push
 ## Config
 
 ```yaml
-files:
-- file: /home/davide/.bashrc:
-  owner: davide
+sections:
+- path: /home/davide/.bashrc:
 ```
