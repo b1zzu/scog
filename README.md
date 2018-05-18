@@ -6,8 +6,13 @@ Sync config files through multiple pc using a remote git repository
 
 Install Rust and Cargo
 
+Build scog
 ```bash
 cargo build
+```
+
+Execute
+```bash
 ./target/debug/scog
 ```
 
@@ -30,7 +35,7 @@ scog checkout BRANCH
 ```
 
 Checkout new branch called `_backup_%branch_%date`, copy local files to `_backup_%branch_%date` branch, commit them, push the branch,
-checkout the previous branch, pull new changes from remote with --only-ff (Conflicts must be fixed manually), copy file from repository to local.
+checkout the previous branch, pull new changes from remote with `--only-ff` (Conflicts must be fixed manually), copy file from repository to local.
 ```bash
 scog pull
 ```
